@@ -302,8 +302,40 @@ let products = JSON.parse(localStorage.getItem("storedProducts")) || [
 ];
 
 let cart=[];
-let allOrders = JSON.parse(localStorage.getItem("allOrders")) || [];
+let allOrders = [];
 let challans = JSON.parse(localStorage.getItem("challans")) || [];
+
+const BIN_ID = "69fdf506250b1311c32081e4";
+const API_KEY = "$2a$10$hrZUxkqHoGsOGtOCdvp2RefEM0p5FZxW/c7IFCa.v92Ln8JjhWTgO";
+
+async function loadOrders() {
+
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+        headers: {
+            "X-Master-Key": API_KEY
+        }
+    });
+
+    const data = await res.json();
+
+    allOrders = data.record.orders || [];
+
+    updateDashboard();
+}
+
+async function saveOrdersOnline() {
+
+    await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+            "X-Master-Key": API_KEY
+        },
+        body: JSON.stringify({
+            orders: allOrders
+        })
+    });
+}
 
 function displayProducts(list){
 let html="";
@@ -325,6 +357,8 @@ document.getElementById("productList").innerHTML=html;
 }
 
 displayProducts(products);
+
+loadOrders();
 
 function addCart(id){
 let qty=parseInt(document.getElementById("qty"+id).value);
@@ -746,16 +780,28 @@ updateChallanHistory();
 }
 
 // ==== ADMIN DASHBOARD LOGIC ====
-function saveSale(amount){
-    let today=new Date().toISOString().split("T")[0];
-    let sales=JSON.parse(localStorage.getItem("salesData"))||{};
-    if(!sales[today]) sales[today]=0;
-    sales[today]+=amount;
-    localStorage.setItem("salesData",JSON.stringify(sales));
+async function saveSale(amount){
 
-    let custName=document.getElementById("custName").value || "Unknown";
-    allOrders.push({date:today,customer:custName,items:[...cart]});
-    localStorage.setItem("allOrders",JSON.stringify(allOrders));
+    let today = new Date().toISOString().split("T")[0];
+
+    let sales = JSON.parse(localStorage.getItem("salesData")) || {};
+
+    if(!sales[today]) sales[today] = 0;
+
+    sales[today] += amount;
+
+    localStorage.setItem("salesData", JSON.stringify(sales));
+
+    let custName = document.getElementById("custName").value || "Unknown";
+
+    allOrders.push({
+        date: today,
+        customer: custName,
+        items: [...cart]
+    });
+
+    await saveOrdersOnline();
+
     updateDashboard();
 }
 
