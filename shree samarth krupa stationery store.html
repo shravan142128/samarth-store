@@ -205,6 +205,7 @@ Download Delivery Challan
 </footer>
 
 <script>
+
 // ==== PRODUCTS & CART LOGIC ====
 let products = JSON.parse(localStorage.getItem("storedProducts")) || [
 { id:1,name:"A4 75 GSM Paper",price:250,cat:"office",img:"https://m.media-amazon.com/images/I/51XUKku0iwL.jpg", hsn:"48025690", uom:"PKT"   },
@@ -779,6 +780,53 @@ updateChallanHistory();
     doc.save("Delivery_Challan_" + challanNumber + ".pdf");
 }
 
+// DOWNLOAD INVOICE FOR PARTICULAR ORDER
+function downloadInvoiceForOrder(index) {
+
+    let selectedOrder = allOrders[index];
+
+    // backup cart
+    let oldCart = [...cart];
+
+    // load selected order
+    cart = [...selectedOrder.items];
+
+    // set customer
+    document.getElementById("custName").value =
+        selectedOrder.customer || "Customer";
+
+    // generate invoice
+    generatePDF();
+
+    // restore cart
+    cart = oldCart;
+    updateCart();
+}
+
+
+// DOWNLOAD CHALLAN FOR PARTICULAR ORDER
+function downloadChallanForOrder(index) {
+
+    let selectedOrder = allOrders[index];
+
+    // backup cart
+    let oldCart = [...cart];
+
+    // load order items
+    cart = [...selectedOrder.items];
+
+    // set customer
+    document.getElementById("custName").value =
+        selectedOrder.customer || "Customer";
+
+    // generate challan
+    generateDeliveryChallan();
+
+    // restore cart
+    cart = oldCart;
+    updateCart();
+}
+
 // ==== ADMIN DASHBOARD LOGIC ====
 async function saveSale(amount){
 
@@ -826,13 +874,72 @@ function updateDashboard(){
     let customers = [...new Set(allOrders.map(o=>o.customer))];
     document.getElementById("customerList").innerHTML = customers.join("<br>") || "-";
 
-    // ORDER LIST
-    let orderHtml="";
-    allOrders.forEach((o,i)=>{
-        let items=o.items.map(it=>`${it.name} x${it.qty}`).join(", ");
-        orderHtml+=`<div><strong>Order ${i+1}</strong> - ${o.customer} - ₹${o.items.reduce((a,i)=>a+i.price*i.qty,0).toFixed(2)}<br>${items}</div>`;
-    });
-    document.getElementById("orderList").innerHTML = orderHtml;
+   // ORDER LIST WITH SEPARATE DOWNLOAD BUTTONS
+let orderHtml = "";
+
+allOrders.forEach((o, i) => {
+
+    let total = o.items.reduce((a, item) => a + (item.price * item.qty), 0);
+
+    let items = o.items.map(it =>
+        `${it.name} x${it.qty}`
+    ).join(", ");
+
+    orderHtml += `
+    <div style="
+        background:#222;
+        padding:15px;
+        border-radius:10px;
+        margin-bottom:15px;
+        border:1px solid #444;
+    ">
+
+        <strong style="font-size:16px;">
+            Order ${i + 1}
+        </strong>
+
+        <br>
+        Customer: ${o.customer}
+
+        <br>
+        Date: ${o.date}
+
+        <br>
+        Amount: ₹${total.toFixed(2)}
+
+        <br><br>
+        <small>${items}</small>
+
+        <div style="
+            margin-top:12px;
+            display:flex;
+            gap:10px;
+            flex-wrap:wrap;
+        ">
+
+            <button
+                class="btn"
+                style="background:#4CAF50;color:white;"
+                onclick="downloadInvoiceForOrder(${i})"
+            >
+                📄 Download Invoice
+            </button>
+
+            <button
+                class="btn"
+                style="background:#ffcc00;color:black;"
+                onclick="downloadChallanForOrder(${i})"
+            >
+                🚚 Download Delivery Challan
+            </button>
+
+        </div>
+
+    </div>
+    `;
+});
+
+document.getElementById("orderList").innerHTML = orderHtml;
 
     // UPDATE CHART
     let labels=Object.keys(sales);
