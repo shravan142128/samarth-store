@@ -618,7 +618,14 @@ function generatePDF() {
     y += 22;
     doc.text("Authorised Signature", 140, y);
 
-    doc.save(`Invoice_${baseNum}.pdf`);
+    // WORKING MOBILE METHOD
+const pdfBlob = doc.output("blob");
+
+const fileURL = URL.createObjectURL(pdfBlob);
+
+// Open PDF in mobile app
+window.open(fileURL, "_blank");
+
     localStorage.setItem('lastInvoiceNo', baseNum);
     saveSale(grandTotal);
 
@@ -777,7 +784,13 @@ localStorage.setItem("challans", JSON.stringify(challans));
 // Refresh the history view immediately
 updateChallanHistory();
 
-    doc.save("Delivery_Challan_" + challanNumber + ".pdf");
+    // WORKING MOBILE METHOD
+const pdfBlob = doc.output("blob");
+
+const fileURL = URL.createObjectURL(pdfBlob);
+
+// Open PDF in mobile app
+window.open(fileURL, "_blank");
 }
 
 // DOWNLOAD INVOICE FOR PARTICULAR ORDER
